@@ -1,5 +1,3 @@
-# Trem-hor-rio-
-Horário trem de passageiros
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -21,8 +19,8 @@ Horário trem de passageiros
 <div class="field">
     <label for="prefix">Prefixo:</label>
     <select id="prefix">
-        <option value="P21">P21 (São Luís &rarr; Parauapebas)</option>
-        <option value="P22">P22 (Parauapebas &rarr; São Luís)</option>
+        <option value="P21">P21 (São Luís → Parauapebas)</option>
+        <option value="P22">P22 (Parauapebas → São Luís)</option>
     </select>
 </div>
 
@@ -62,7 +60,6 @@ Horário trem de passageiros
 
 <script>
 (function(){
-    // Horários de referência (tabela oficial) para cada estação nos prefixos P21 e P22
     var schedule = {
         "P21": [
             { name: "Anjo da Guarda", arr: null, dep: "08:00" },
@@ -110,7 +107,6 @@ Horário trem de passageiros
     var copyBtn = document.getElementById('copy');
     var generateBtn = document.getElementById('generate');
 
-    // Preenche a lista de estações de acordo com o prefixo selecionado
     function populateStations() {
         var prefix = prefixSelect.value;
         stationSelect.innerHTML = "";
@@ -122,10 +118,8 @@ Horário trem de passageiros
         });
     }
     prefixSelect.addEventListener('change', populateStations);
-    // Inicializa com prefixo P21 selecionado
     populateStations();
 
-    // Formata um valor em minutos (inteiro) no formato HH:MM
     function formatMinutes(mins) {
         var absMin = Math.abs(mins);
         var h = Math.floor(absMin / 60);
@@ -133,7 +127,6 @@ Horário trem de passageiros
         return (h < 10 ? '0' + h : h) + ':' + (m < 10 ? '0' + m : m);
     }
 
-    // Gera o texto de reporte com base nos inputs
     generateBtn.addEventListener('click', function() {
         var prefix = prefixSelect.value;
         var stationIndex = parseInt(stationSelect.value);
@@ -145,104 +138,82 @@ Horário trem de passageiros
         var depVal = departureInput.value;
         var noteVal = noteInput.value.trim();
 
-        // Validação básica dos campos obrigatórios
         if (!dateVal || !depVal) {
-            alert("Por favor, preencha pelo menos a data e o horário de partida.");
+            alert("Preencha a data e a hora de partida.");
             return;
         }
         if (stationIndex !== 0 && !arrVal) {
-            alert("Por favor, preencha o horário de chegada.");
+            alert("Preencha o horário de chegada.");
             return;
         }
 
-        // Formata a data no padrão DD/MM/AAAA
-        var dateParts = dateVal.split('-'); // valor do input date: YYYY-MM-DD
+        var dateParts = dateVal.split('-');
         var formattedDate = (dateParts.length === 3) 
             ? (dateParts[2] + '/' + dateParts[1] + '/' + dateParts[0]) 
             : dateVal;
 
-        // Converte horários reais de chegada/partida para minutos desde meia-noite
         var actualArrMin = arrVal ? (parseInt(arrVal.split(':')[0]) * 60 + parseInt(arrVal.split(':')[1])) : null;
         var actualDepMin = parseInt(depVal.split(':')[0]) * 60 + parseInt(depVal.split(':')[1]);
-
-        // Converte horários programados para minutos desde meia-noite
         var scheduledArrMin = stationData.arr ? (parseInt(stationData.arr.split(':')[0]) * 60 + parseInt(stationData.arr.split(':')[1])) : null;
         var scheduledDepMin = stationData.dep ? (parseInt(stationData.dep.split(':')[0]) * 60 + parseInt(stationData.dep.split(':')[1])) : null;
 
-        // Monta as linhas do reporte
         var reportLines = [];
         reportLines.push("🚊 Acompanhamento " + prefix);
         reportLines.push("🚉 ESTAÇÃO DE " + stationName.toUpperCase());
         reportLines.push("Data: " + formattedDate);
-        if (arrVal) {
-            reportLines.push("Posicionado às: " + arrVal + 'h');
-        }
+        if (arrVal) reportLines.push("Posicionado às: " + arrVal + 'h');
         reportLines.push("Partimos às: " + depVal + 'h');
 
-        // Calcula tempo de permanência (exceto se estação de origem, que não calcula permanência)
         if (stationIndex !== 0 && actualArrMin != null) {
             var dwellMin = actualDepMin - actualArrMin;
-            if (dwellMin < 0) dwellMin += 24 * 60; // ajuste se houver virada de dia
+            if (dwellMin < 0) dwellMin += 1440;
             reportLines.push("Tempo de Permanência: " + formatMinutes(dwellMin) + 'h');
         }
 
-        // Calcula atraso na chegada (comparação entre chegada real e programada)
         if (stationIndex !== 0 && scheduledArrMin != null && actualArrMin != null) {
             var arrivalDelayMin = actualArrMin - scheduledArrMin;
             var delayStr = formatMinutes(arrivalDelayMin) + 'h';
             if (arrivalDelayMin < 0) {
-                // Chegou adiantado
                 reportLines.push("Tempo de Atraso: " + delayStr + " (adiantado)");
             } else {
                 reportLines.push("Tempo de Atraso: " + delayStr + " (chegada)");
             }
         }
 
-        // Calcula atraso na partida (comparação entre partida real e programada)
         if (scheduledDepMin != null) {
             var departureDelayMin = actualDepMin - scheduledDepMin;
             var depDelayStr = formatMinutes(departureDelayMin) + 'h';
             if (departureDelayMin < 0) {
-                // Partida adiantada (raro)
                 reportLines.push("Tempo de Atraso na Partida: " + depDelayStr + " (adiantado)");
             } else {
                 reportLines.push("Tempo de Atraso na Partida: " + depDelayStr);
             }
         }
 
-        // Calcula previsão de chegada na próxima estação, se não for a última
         if (stationIndex < schedule[prefix].length - 1) {
-            var nextStationName = schedule[prefix][stationIndex + 1].name;
-            // Tempo de deslocamento padrão entre estações (diferença entre horário programado de partida atual e chegada na próxima)
-            var nextArrSched = schedule[prefix][stationIndex + 1].arr;
+            var nextStation = schedule[prefix][stationIndex + 1];
+            var nextArrSched = nextStation.arr;
             var currDepSched = stationData.dep;
-            var travelMin = 0;
             if (nextArrSched && currDepSched) {
                 var nextArrMin = parseInt(nextArrSched.split(':')[0]) * 60 + parseInt(nextArrSched.split(':')[1]);
                 var currDepMin = parseInt(currDepSched.split(':')[0]) * 60 + parseInt(currDepSched.split(':')[1]);
-                travelMin = nextArrMin - currDepMin;
-                if (travelMin < 0) travelMin += 24 * 60;
+                var travelMin = nextArrMin - currDepMin;
+                if (travelMin < 0) travelMin += 1440;
+                var predictedMin = actualDepMin + travelMin;
+                if (predictedMin >= 1440) predictedMin -= 1440;
+                var h = Math.floor(predictedMin / 60);
+                var m = predictedMin % 60;
+                var predTimeStr = (h < 10 ? '0' + h : h) + ':' + (m < 10 ? '0' + m : m);
+                reportLines.push("Previsão em " + nextStation.name + ": " + predTimeStr + 'h');
             }
-            // Previsão = hora de partida real + tempo de deslocamento padrão
-            var predictedArrMin = actualDepMin + travelMin;
-            if (predictedArrMin >= 24 * 60) predictedArrMin -= 24 * 60; // ajuste se passar de meia-noite
-            var predHours = Math.floor(predictedArrMin / 60);
-            var predMinutes = predictedArrMin % 60;
-            var predTimeStr = (predHours < 10 ? '0' + predHours : predHours) + ':' + (predMinutes < 10 ? '0' + predMinutes : predMinutes);
-            reportLines.push("Previsão em " + nextStationName + ": " + predTimeStr + 'h');
         }
 
-        // Adiciona nota, se houver
-        if (noteVal) {
-            reportLines.push("📝 " + noteVal);
-        }
+        if (noteVal) reportLines.push("📝 " + noteVal);
 
-        // Exibe o texto final no campo de saída
         outputArea.value = reportLines.join("\n");
         copyBtn.disabled = false;
     });
 
-    // Copia o texto gerado para a área de transferência
     copyBtn.addEventListener('click', function() {
         var text = outputArea.value;
         if (!text) return;
