@@ -173,20 +173,8 @@
         if (stationIndex !== 0 && scheduledArrMin != null && actualArrMin != null) {
             var arrivalDelayMin = actualArrMin - scheduledArrMin;
             var delayStr = formatMinutes(arrivalDelayMin) + 'h';
-            if (arrivalDelayMin < 0) {
-                reportLines.push("Tempo de Atraso: " + delayStr + " (adiantado)");
-            } else {
-                reportLines.push("Tempo de Atraso: " + delayStr + " (chegada)");
-            }
-        }
-
-        if (scheduledDepMin != null) {
-            var departureDelayMin = actualDepMin - scheduledDepMin;
-            var depDelayStr = formatMinutes(departureDelayMin) + 'h';
-            if (departureDelayMin < 0) {
-                reportLines.push("Tempo de Atraso na Partida: " + depDelayStr + " (adiantado)");
-            } else {
-                reportLines.push("Tempo de Atraso na Partida: " + depDelayStr);
+            if (arrivalDelayMin > 0) {
+                reportLines.push("Tempo de Atraso: " + delayStr);
             }
         }
 
