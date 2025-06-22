@@ -1,215 +1,177 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>Gerador de Reporte - Trem EFC P21/P22</title>
-<style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #f4f4f4; }
+  <meta charset="UTF-8">
+  <title>Gerador de Reporte - Trem EFC P21/P22</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
     h1 { font-size: 1.5em; }
-    .field { margin-bottom: 10px; }
-    label { font-weight: bold; margin-right: 5px; }
-    select, input, textarea { padding: 5px; font-size: 1em; }
-    #output { width: 100%; height: 180px; padding: 5px; font-size: 1em; white-space: pre-wrap; }
-    button { padding: 8px 12px; font-size: 1em; margin-right: 5px; cursor: pointer; }
-</style>
+    .field { margin-bottom: 12px; }
+    label { font-weight: bold; display: inline-block; width: 180px; }
+    select, input, textarea { font-size: 1em; padding: 5px; width: auto; }
+    textarea { width: 100%; height: 220px; white-space: pre-wrap; }
+    button { font-size: 1em; padding: 8px 12px; margin-right: 10px; }
+  </style>
 </head>
 <body>
+
 <h1>🚆 Gerador de Reporte de Estação - Trem P21 / P22</h1>
 
 <div class="field">
-    <label for="prefix">Prefixo:</label>
-    <select id="prefix">
-        <option value="P21">P21 (São Luís → Parauapebas)</option>
-        <option value="P22">P22 (Parauapebas → São Luís)</option>
-    </select>
+  <label for="prefix">Prefixo:</label>
+  <select id="prefix">
+    <option value="P21">P21 (São Luís → Parauapebas)</option>
+    <option value="P22">P22 (Parauapebas → São Luís)</option>
+  </select>
 </div>
 
 <div class="field">
-    <label for="station">Estação:</label>
-    <select id="station"></select>
+  <label for="station">Estação:</label>
+  <select id="station"></select>
 </div>
 
 <div class="field">
-    <label for="date">Data:</label>
-    <input type="date" id="date">
+  <label for="date">Data:</label>
+  <input type="date" id="date">
 </div>
 
 <div class="field">
-    <label for="arrival">Posicionado às (chegada real):</label>
-    <input type="time" id="arrival">
+  <label for="arrival">Posicionado às:</label>
+  <input type="time" id="arrival">
 </div>
 
 <div class="field">
-    <label for="departure">Partida às (real):</label>
-    <input type="time" id="departure">
+  <label for="departure">Partimos às:</label>
+  <input type="time" id="departure">
 </div>
 
 <div class="field">
-    <label for="note">Nota (opcional):</label>
-    <input type="text" id="note" placeholder="Observações...">
+  <label for="note">Nota (opcional):</label>
+  <input type="text" id="note" placeholder="Ex: Aguardamos cumprimento de horário.">
 </div>
 
-<div class="field">
-    <button id="generate">Gerar Texto</button>
-    <button id="copy" disabled>Copiar Texto</button>
-</div>
+<button id="generate">Gerar Texto</button>
+<button onclick="copyText()">📋 Copiar Texto</button>
 
-<div class="field">
-    <textarea id="output" readonly placeholder="O texto de reporte aparecerá aqui..."></textarea>
-</div>
+<textarea id="output" readonly></textarea>
 
 <script>
-(function(){
-    var schedule = {
-        "P21": [
-            { name: "Anjo da Guarda", arr: null, dep: "08:00" },
-            { name: "Arari", arr: "10:09", dep: "10:16" },
-            { name: "Vitória do Mearim", arr: "10:37", dep: "10:40" },
-            { name: "Santa Inês", arr: "11:46", dep: "12:00" },
-            { name: "Alto Alegre do Pindaré", arr: "12:51", dep: "12:56" },
-            { name: "Mineirinho", arr: "13:16", dep: "13:19" },
-            { name: "Auzilândia", arr: "13:37", dep: "13:40" },
-            { name: "Altamira", arr: "13:59", dep: "14:02" },
-            { name: "Presa de Porco (Vila Pindaré)", arr: "14:15", dep: "14:30" },
-            { name: "Nova Vida", arr: "15:21", dep: "15:26" },
-            { name: "Açailândia", arr: "17:31", dep: "17:41" },
-            { name: "São Pedro da Água Branca", arr: "19:54", dep: "19:57" },
-            { name: "Marabá", arr: "21:21", dep: "21:31" },
-            { name: "Itainópolis", arr: "22:19", dep: "22:22" },
-            { name: "Parauapebas", arr: "23:50", dep: null }
-        ],
-        "P22": [
-            { name: "Parauapebas", arr: null, dep: "06:00" },
-            { name: "Itainópolis", arr: "07:28", dep: "07:31" },
-            { name: "Marabá", arr: "08:19", dep: "08:29" },
-            { name: "São Pedro da Água Branca", arr: "09:53", dep: "09:56" },
-            { name: "Açailândia", arr: "12:09", dep: "12:19" },
-            { name: "Nova Vida", arr: "14:24", dep: "14:29" },
-            { name: "Presa de Porco (Vila Pindaré)", arr: "15:20", dep: "15:25" },
-            { name: "Altamira", arr: "15:48", dep: "15:51" },
-            { name: "Auzilândia", arr: "16:10", dep: "16:13" },
-            { name: "Mineirinho", arr: "16:31", dep: "16:34" },
-            { name: "Alto Alegre do Pindaré", arr: "16:54", dep: "16:59" },
-            { name: "Santa Inês", arr: "17:56", dep: "18:03" },
-            { name: "Vitória do Mearim", arr: "19:07", dep: "19:10" },
-            { name: "Arari", arr: "19:34", dep: "19:41" },
-            { name: "Anjo da Guarda", arr: "22:00", dep: null }
-        ]
-    };
+const schedule = {
+  "P21": [
+    { name: "Anjo da Guarda", arr: null, dep: "08:00" },
+    { name: "Arari", arr: "10:09", dep: "10:16" },
+    { name: "Vitória do Mearim", arr: "10:37", dep: "10:40" },
+    { name: "Santa Inês", arr: "11:46", dep: "12:00" },
+    { name: "Alto Alegre do Pindaré", arr: "12:51", dep: "12:56" },
+    { name: "Mineirinho", arr: "13:16", dep: "13:19" },
+    { name: "Auzilândia", arr: "13:37", dep: "13:40" },
+    { name: "Altamira", arr: "13:59", dep: "14:02" },
+    { name: "Presa de Porco (Vila Pindaré)", arr: "14:15", dep: "14:30" },
+    { name: "Nova Vida", arr: "15:21", dep: "15:26" },
+    { name: "Açailândia", arr: "17:31", dep: "17:41" },
+    { name: "São Pedro da Água Branca", arr: "19:54", dep: "19:57" },
+    { name: "Marabá", arr: "21:21", dep: "21:31" },
+    { name: "Itainópolis", arr: "22:19", dep: "22:22" },
+    { name: "Parauapebas", arr: "23:50", dep: null }
+  ],
+  "P22": [
+    { name: "Parauapebas", arr: null, dep: "06:00" },
+    { name: "Itainópolis", arr: "07:28", dep: "07:31" },
+    { name: "Marabá", arr: "08:19", dep: "08:29" },
+    { name: "São Pedro da Água Branca", arr: "09:53", dep: "09:56" },
+    { name: "Açailândia", arr: "12:09", dep: "12:19" },
+    { name: "Nova Vida", arr: "14:24", dep: "14:29" },
+    { name: "Presa de Porco (Vila Pindaré)", arr: "15:20", dep: "15:25" },
+    { name: "Altamira", arr: "15:48", dep: "15:51" },
+    { name: "Auzilândia", arr: "16:10", dep: "16:13" },
+    { name: "Mineirinho", arr: "16:31", dep: "16:34" },
+    { name: "Alto Alegre do Pindaré", arr: "16:54", dep: "16:59" },
+    { name: "Santa Inês", arr: "17:56", dep: "18:03" },
+    { name: "Vitória do Mearim", arr: "19:07", dep: "19:10" },
+    { name: "Arari", arr: "19:34", dep: "19:41" },
+    { name: "Anjo da Guarda", arr: "22:00", dep: null }
+  ]
+};
 
-    var prefixSelect = document.getElementById('prefix');
-    var stationSelect = document.getElementById('station');
-    var dateInput = document.getElementById('date');
-    var arrivalInput = document.getElementById('arrival');
-    var departureInput = document.getElementById('departure');
-    var noteInput = document.getElementById('note');
-    var outputArea = document.getElementById('output');
-    var copyBtn = document.getElementById('copy');
-    var generateBtn = document.getElementById('generate');
+function parseTime(str) {
+  const [h, m] = str.split(":").map(Number);
+  return h * 60 + m;
+}
 
-    function populateStations() {
-        var prefix = prefixSelect.value;
-        stationSelect.innerHTML = "";
-        schedule[prefix].forEach(function(station, index) {
-            var opt = document.createElement('option');
-            opt.value = index;
-            opt.textContent = station.name;
-            stationSelect.appendChild(opt);
-        });
-    }
-    prefixSelect.addEventListener('change', populateStations);
-    populateStations();
+function formatTime(mins) {
+  const h = String(Math.floor(mins / 60)).padStart(2, '0');
+  const m = String(mins % 60).padStart(2, '0');
+  return `${h}:${m}`;
+}
 
-    function formatMinutes(mins) {
-        var absMin = Math.abs(mins);
-        var h = Math.floor(absMin / 60);
-        var m = absMin % 60;
-        return (h < 10 ? '0' + h : h) + ':' + (m < 10 ? '0' + m : m);
-    }
+function updateStations() {
+  const prefix = document.getElementById("prefix").value;
+  const stationList = document.getElementById("station");
+  stationList.innerHTML = "";
+  schedule[prefix].forEach((station, idx) => {
+    const opt = document.createElement("option");
+    opt.value = idx;
+    opt.textContent = station.name;
+    stationList.appendChild(opt);
+  });
+}
+document.getElementById("prefix").addEventListener("change", updateStations);
+updateStations();
 
-    generateBtn.addEventListener('click', function() {
-        var prefix = prefixSelect.value;
-        var stationIndex = parseInt(stationSelect.value);
-        if (isNaN(stationIndex)) return;
-        var stationData = schedule[prefix][stationIndex];
-        var stationName = stationData.name;
-        var dateVal = dateInput.value;
-        var arrVal = arrivalInput.value;
-        var depVal = departureInput.value;
-        var noteVal = noteInput.value.trim();
+document.getElementById("generate").addEventListener("click", function () {
+  const prefix = document.getElementById("prefix").value;
+  const stationIndex = Number(document.getElementById("station").value);
+  const station = schedule[prefix][stationIndex];
+  const arrival = document.getElementById("arrival").value;
+  const departure = document.getElementById("departure").value;
+  const date = document.getElementById("date").value.split("-").reverse().join("/");
+  const note = document.getElementById("note").value;
 
-        if (!dateVal || !depVal) {
-            alert("Preencha a data e a hora de partida.");
-            return;
-        }
-        if (stationIndex !== 0 && !arrVal) {
-            alert("Preencha o horário de chegada.");
-            return;
-        }
+  const lines = [];
+  lines.push(`*🚊 Acompanhamento ${prefix}*\n`);
+  lines.push(`*🚉 ${station.name.toUpperCase()}*\n`);
+  lines.push(`Data : ${date}\n`);
 
-        var dateParts = dateVal.split('-');
-        var formattedDate = (dateParts.length === 3) 
-            ? (dateParts[2] + '/' + dateParts[1] + '/' + dateParts[0]) 
-            : dateVal;
+  if (arrival) lines.push(`Posicionado às: ${arrival}h`);
+  if (departure) lines.push(`Partimos às: ${departure}h`);
 
-        var actualArrMin = arrVal ? (parseInt(arrVal.split(':')[0]) * 60 + parseInt(arrVal.split(':')[1])) : null;
-        var actualDepMin = parseInt(depVal.split(':')[0]) * 60 + parseInt(depVal.split(':')[1]);
-        var scheduledArrMin = stationData.arr ? (parseInt(stationData.arr.split(':')[0]) * 60 + parseInt(stationData.arr.split(':')[1])) : null;
-        var scheduledDepMin = stationData.dep ? (parseInt(stationData.dep.split(':')[0]) * 60 + parseInt(stationData.dep.split(':')[1])) : null;
+  if (arrival && departure) {
+    const diff = (parseTime(departure) - parseTime(arrival) + 1440) % 1440;
+    lines.push(`Tempo de Permanência: ${formatTime(diff)}h \n`);
+  }
 
-        var reportLines = [];
-        reportLines.push("🚊 Acompanhamento " + prefix);
-        reportLines.push("🚉 ESTAÇÃO DE " + stationName.toUpperCase());
-        reportLines.push("Data: " + formattedDate);
-        if (arrVal) reportLines.push("Posicionado às: " + arrVal + 'h');
-        reportLines.push("Partimos às: " + depVal + 'h');
+  // Atraso na chegada (exceto estações de origem)
+  if (arrival && station.arr) {
+    const delay = parseTime(arrival) - parseTime(station.arr);
+    if (delay > 0) lines.push(`Tempo de Atraso: ${formatTime(delay)}h\n`);
+  }
 
-        if (stationIndex !== 0 && actualArrMin != null) {
-            var dwellMin = actualDepMin - actualArrMin;
-            if (dwellMin < 0) dwellMin += 1440;
-            reportLines.push("Tempo de Permanência: " + formatMinutes(dwellMin) + 'h');
-        }
+  // Atraso na partida nas origens
+  if (!station.arr && station.dep && departure) {
+    const delay = parseTime(departure) - parseTime(station.dep);
+    if (delay > 0) lines.push(`Partida atrasada em: ${formatTime(delay)}h\n`);
+  }
 
-        if (stationIndex !== 0 && scheduledArrMin != null && actualArrMin != null) {
-            var arrivalDelayMin = actualArrMin - scheduledArrMin;
-            var delayStr = formatMinutes(arrivalDelayMin) + 'h';
-            if (arrivalDelayMin > 0) {
-                reportLines.push("Tempo de Atraso: " + delayStr);
-            }
-        }
+  // Previsão próxima estação
+  const nextStation = schedule[prefix][stationIndex + 1];
+  if (nextStation && station.dep && nextStation.arr && departure) {
+    const baseTravel = parseTime(nextStation.arr) - parseTime(station.dep);
+    const predicted = (parseTime(departure) + baseTravel + 1440) % 1440;
+    lines.push(`Previsão em ${nextStation.name}:  ${formatTime(predicted)}h\n`);
+  }
 
-        if (stationIndex < schedule[prefix].length - 1) {
-            var nextStation = schedule[prefix][stationIndex + 1];
-            var nextArrSched = nextStation.arr;
-            var currDepSched = stationData.dep;
-            if (nextArrSched && currDepSched) {
-                var nextArrMin = parseInt(nextArrSched.split(':')[0]) * 60 + parseInt(nextArrSched.split(':')[1]);
-                var currDepMin = parseInt(currDepSched.split(':')[0]) * 60 + parseInt(currDepSched.split(':')[1]);
-                var travelMin = nextArrMin - currDepMin;
-                if (travelMin < 0) travelMin += 1440;
-                var predictedMin = actualDepMin + travelMin;
-                if (predictedMin >= 1440) predictedMin -= 1440;
-                var h = Math.floor(predictedMin / 60);
-                var m = predictedMin % 60;
-                var predTimeStr = (h < 10 ? '0' + h : h) + ':' + (m < 10 ? '0' + m : m);
-                reportLines.push("Previsão em " + nextStation.name + ": " + predTimeStr + 'h');
-            }
-        }
+  if (note) lines.push(`\n*📝 Nota:* ${note}`);
 
-        if (noteVal) reportLines.push("📝 " + noteVal);
+  document.getElementById("output").value = lines.join("\n");
+});
 
-        outputArea.value = reportLines.join("\n");
-        copyBtn.disabled = false;
-    });
-
-    copyBtn.addEventListener('click', function() {
-        var text = outputArea.value;
-        if (!text) return;
-        outputArea.select();
-        document.execCommand('copy');
-        alert("Texto copiado para a área de transferência!");
-    });
-})();
+function copyText() {
+  const text = document.getElementById("output");
+  text.select();
+  document.execCommand("copy");
+  alert("Texto copiado para a área de transferência!");
+}
 </script>
+
 </body>
 </html>
