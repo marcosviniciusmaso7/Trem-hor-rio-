@@ -15,49 +15,49 @@
 </head>
 <body>
 <h1>🚆 Gerador de Reporte de Estação - Trem P21 / P22</h1>
- 
+
 <div class="field">
-<label for="prefix">Prefixo:</label>
-<select id="prefix">
-<option value="P21">P21 (São Luís → Parauapebas)</option>
-<option value="P22">P22 (Parauapebas → São Luís)</option>
-</select>
+    <label for="prefix">Prefixo:</label>
+    <select id="prefix">
+        <option value="P21">P21 (São Luís → Parauapebas)</option>
+        <option value="P22">P22 (Parauapebas → São Luís)</option>
+    </select>
 </div>
- 
+
 <div class="field">
-<label for="station">Estação:</label>
-<select id="station"></select>
+    <label for="station">Estação:</label>
+    <select id="station"></select>
 </div>
- 
+
 <div class="field">
-<label for="date">Data:</label>
-<input type="date" id="date">
+    <label for="date">Data:</label>
+    <input type="date" id="date">
 </div>
- 
+
 <div class="field">
-<label for="arrival">Posicionado às (chegada real):</label>
-<input type="time" id="arrival">
+    <label for="arrival">Posicionado às (chegada real):</label>
+    <input type="time" id="arrival">
 </div>
- 
+
 <div class="field">
-<label for="departure">Partida às (real):</label>
-<input type="time" id="departure">
+    <label for="departure">Partida às (real):</label>
+    <input type="time" id="departure">
 </div>
- 
+
 <div class="field">
-<label for="note">Nota (opcional):</label>
-<input type="text" id="note" placeholder="Observações...">
+    <label for="note">Nota (opcional):</label>
+    <input type="text" id="note" placeholder="Observações...">
 </div>
- 
+
 <div class="field">
-<button id="generate">Gerar Texto</button>
-<button id="copy" disabled>Copiar Texto</button>
+    <button id="generate">Gerar Texto</button>
+    <button id="copy" disabled>Copiar Texto</button>
 </div>
- 
+
 <div class="field">
-<textarea id="output" readonly placeholder="O texto de reporte aparecerá aqui..."></textarea>
+    <textarea id="output" readonly placeholder="O texto de reporte aparecerá aqui..."></textarea>
 </div>
- 
+
 <script>
 (function(){
     const schedule = {
@@ -96,9 +96,9 @@
             { name: "Anjo da Guarda", arr: "22:00", dep: null }
         ]
     };
- 
-    const ESTACOES = ["AÇAILÂNDIA", "MARABÁ", "PARAUAPEBAS", "SANTA INÊS", "ANJO DA GUARDA"];
- 
+
+    const estacoesPrincipais = ["AÇAILÂNDIA", "MARABÁ", "PARAUAPEBAS", "SANTA INÊS", "ANJO DA GUARDA"];
+
     const prefixSelect = document.getElementById('prefix');
     const stationSelect = document.getElementById('station');
     const dateInput = document.getElementById('date');
@@ -107,7 +107,7 @@
     const noteInput = document.getElementById('note');
     const outputArea = document.getElementById('output');
     const copyBtn = document.getElementById('copy');
- 
+
     prefixSelect.addEventListener('change', populateStations);
     function populateStations() {
         const prefix = prefixSelect.value;
@@ -120,70 +120,62 @@
         });
     }
     populateStations();
- 
+
     function toMinutes(t) {
+        if (!t) return null;
         const [h, m] = t.split(':').map(Number);
         return h * 60 + m;
     }
- 
+
     function formatMinutes(mins) {
         const h = Math.floor(Math.abs(mins) / 60);
         const m = Math.abs(mins) % 60;
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
     }
- 
+
     function gerarTexto() {
         const prefix = prefixSelect.value;
         const i = parseInt(stationSelect.value);
         const estacao = schedule[prefix][i];
-        const data = dateInput.value ? dateInput.value.split('-').reverse().join('/') : '';
+        const data = dateInput.value.split('-').reverse().join('/');
         const chegada = arrivalInput.value;
         const partida = departureInput.value;
         const nota = noteInput.value.trim();
         const ehOrigem = (i === 0);
         const ehDestino = (i === schedule[prefix].length - 1);
- 
-        const nomeFormatado = estacao.name.toUpperCase();
-        let tipo = "";
- 
-        if (ESTACOES.includes(nomeFormatado)) {
-            tipo = "🚉 ESTAÇÃO DE";
-        } else {
-            tipo = "🚉 PONTO DE PARADA DE";
-        }
- 
-        let texto = `*🚊 Acompanhamento ${prefix}*\n\n*${tipo} ${nomeFormatado}*\n\nData: ${data}\n`;
- 
+        const nomeEstacao = estacao.name.toUpperCase();
+        const tipoLocal = estacoesPrincipais.includes(nomeEstacao) ? "ESTAÇÃO" : "PONTO DE PARADA";
+
+        let texto = `*🚊 Acompanhamento ${prefix}*\n\n*🚉 ${tipoLocal} DE ${nomeEstacao}*\n\nData : ${data}\n`;
+
         if (chegada) texto += `Posicionado às: ${chegada}h\n`;
         if (!ehDestino && partida) texto += `Partimos às: ${partida}h\n`;
- 
+
         if (!ehOrigem && !ehDestino && chegada && partida) {
             const permanencia = toMinutes(partida) - toMinutes(chegada);
             texto += `Tempo de Permanência: ${formatMinutes(permanencia)}h\n`;
         }
- 
-        let atraso = 0;
-        if (chegada && estacao.arr) atraso += toMinutes(chegada) - toMinutes(estacao.arr);
-        if (partida && estacao.dep) atraso += toMinutes(partida) - toMinutes(estacao.dep);
-        if (atraso < -720) atraso += 1440;
- 
-        if (chegada || partida) texto += `\nTempo de Atraso: ${formatMinutes(atraso)}h\n`;
- 
+
+        if (!ehOrigem && partida && estacao.dep) {
+            let atraso = toMinutes(partida) - toMinutes(estacao.dep);
+            if (atraso < -720) atraso += 1440;
+            if (atraso > 0 || atraso === 0) texto += `\nTempo de Atraso: ${formatMinutes(atraso)}h\n`;
+        }
+
         if (!ehDestino && partida && estacao.dep) {
             const proxima = schedule[prefix][i + 1];
-            const tempo = toMinutes(proxima.arr) - toMinutes(estacao.dep);
-            const chegadaPrevista = toMinutes(partida) + (tempo < 0 ? tempo + 1440 : tempo);
-            const h = Math.floor(chegadaPrevista % 1440 / 60);
-            const m = chegadaPrevista % 1440 % 60;
+            const tempoPrevisto = toMinutes(proxima.arr) - toMinutes(estacao.dep);
+            const chegadaEstimada = toMinutes(partida) + (tempoPrevisto < 0 ? tempoPrevisto + 1440 : tempoPrevisto);
+            const h = Math.floor(chegadaEstimada % 1440 / 60);
+            const m = chegadaEstimada % 60;
             texto += `\nPrevisão em ${proxima.name}: ${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}h\n`;
         }
- 
+
         if (nota) texto += `\n*📝 Nota:* ${nota}`;
- 
         outputArea.value = texto;
         copyBtn.disabled = false;
     }
- 
+
     document.getElementById('generate').addEventListener('click', gerarTexto);
     copyBtn.addEventListener('click', function(){
         navigator.clipboard.writeText(outputArea.value).then(() => alert("Texto copiado!"));
