@@ -65,12 +65,12 @@
             { name: "Anjo da Guarda", arr: null, dep: "08:00" },
             { name: "Arari", arr: "10:09", dep: "10:16" },
             { name: "Vitória do Mearim", arr: "10:37", dep: "10:40" },
-            { name: "Santa Inês", arr: "11:46", dep: "12:00" },
+            { name: "Santa Inês", arr: "11:46", dep: "11:56" },
             { name: "Alto Alegre do Pindaré", arr: "12:51", dep: "12:56" },
             { name: "Mineirinho", arr: "13:16", dep: "13:19" },
             { name: "Auzilândia", arr: "13:37", dep: "13:40" },
             { name: "Altamira", arr: "13:59", dep: "14:02" },
-            { name: "Presa de Porco (Vila Pindaré)", arr: "14:15", dep: "14:30" },
+            { name: "Vila Pindaré", arr: "14:25", dep: "14:30" },
             { name: "Nova Vida", arr: "15:21", dep: "15:26" },
             { name: "Açailândia", arr: "17:31", dep: "17:41" },
             { name: "São Pedro da Água Branca", arr: "19:54", dep: "19:57" },
@@ -85,17 +85,19 @@
             { name: "São Pedro da Água Branca", arr: "09:53", dep: "09:56" },
             { name: "Açailândia", arr: "12:09", dep: "12:19" },
             { name: "Nova Vida", arr: "14:24", dep: "14:29" },
-            { name: "Presa de Porco (Vila Pindaré)", arr: "15:20", dep: "15:25" },
+            { name: "Vila Pindaré", arr: "15:20", dep: "15:25" },
             { name: "Altamira", arr: "15:48", dep: "15:51" },
             { name: "Auzilândia", arr: "16:10", dep: "16:13" },
             { name: "Mineirinho", arr: "16:31", dep: "16:34" },
             { name: "Alto Alegre do Pindaré", arr: "16:54", dep: "16:59" },
-            { name: "Santa Inês", arr: "17:56", dep: "18:03" },
-            { name: "Vitória do Mearim", arr: "19:07", dep: "19:10" },
+            { name: "Santa Inês", arr: "17:54", dep: "18:04" },
+            { name: "Vitória do Mearim", arr: "19:10", dep: "19:13" },
             { name: "Arari", arr: "19:34", dep: "19:41" },
             { name: "Anjo da Guarda", arr: "22:00", dep: null }
         ]
     };
+
+    const ESTACOES = ["AÇAILÂNDIA", "MARABÁ", "PARAUAPEBAS", "SANTA INÊS", "ANJO DA GUARDA"];
 
     const prefixSelect = document.getElementById('prefix');
     const stationSelect = document.getElementById('station');
@@ -127,55 +129,64 @@
     function formatMinutes(mins) {
         const h = Math.floor(Math.abs(mins) / 60);
         const m = Math.abs(mins) % 60;
-        return `${h < 10 ? '0' : ''}${h}:${m < 10 ? '0' : ''}${m}`;
+        return ${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')};
     }
 
     function gerarTexto() {
         const prefix = prefixSelect.value;
         const i = parseInt(stationSelect.value);
         const estacao = schedule[prefix][i];
-        const data = dateInput.value.split('-').reverse().join('/');
+        const data = dateInput.value ? dateInput.value.split('-').reverse().join('/') : '';
         const chegada = arrivalInput.value;
         const partida = departureInput.value;
         const nota = noteInput.value.trim();
         const ehOrigem = (i === 0);
         const ehDestino = (i === schedule[prefix].length - 1);
 
-        let texto = `*🚊 Acompanhamento ${prefix}*\n\n*🚉 ${estacao.name.toUpperCase()}*\n\nData : ${data}\n`;
+        const nomeFormatado = estacao.name.toUpperCase();
+        let tipo = "";
 
-        if (chegada) texto += `Posicionado às: ${chegada}h\n`;
-        if (!ehDestino && partida) texto += `Partimos às: ${partida}h\n`;
+        if (ESTACOES.includes(nomeFormatado)) {
+            tipo = "🚉 ESTAÇÃO DE";
+        } else {
+            tipo = "🚉 PONTO DE PARADA DE";
+        }
+
+        let texto = *🚊 Acompanhamento ${prefix}*\n\n*${tipo} ${nomeFormatado}*\n\nData: ${data}\n;
+
+        if (chegada) texto += Posicionado às: ${chegada}h\n;
+        if (!ehDestino && partida) texto += Partimos às: ${partida}h\n;
 
         if (!ehOrigem && !ehDestino && chegada && partida) {
             const permanencia = toMinutes(partida) - toMinutes(chegada);
-            texto += `Tempo de Permanência: ${formatMinutes(permanencia)}h \n`;
+            texto += Tempo de Permanência: ${formatMinutes(permanencia)}h\n;
         }
 
-        if (chegada && estacao.arr) {
-            let atraso = toMinutes(chegada) - toMinutes(estacao.arr);
-            if (atraso < -720) atraso += 1440; // virada de dia
-            if (atraso > 0) texto += `\nTempo de Atraso: ${formatMinutes(atraso)}h\n`;
-        }
+        let atraso = 0;
+        if (chegada && estacao.arr) atraso += toMinutes(chegada) - toMinutes(estacao.arr);
+        if (partida && estacao.dep) atraso += toMinutes(partida) - toMinutes(estacao.dep);
+        if (atraso < -720) atraso += 1440;
+
+        if (chegada || partida) texto += \nTempo de Atraso: ${formatMinutes(atraso)}h\n;
 
         if (!ehDestino && partida && estacao.dep) {
             const proxima = schedule[prefix][i + 1];
             const tempo = toMinutes(proxima.arr) - toMinutes(estacao.dep);
             const chegadaPrevista = toMinutes(partida) + (tempo < 0 ? tempo + 1440 : tempo);
             const h = Math.floor(chegadaPrevista % 1440 / 60);
-            const m = chegadaPrevista % 60;
-            texto += `\nPrevisão em ${proxima.name}:  ${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}h\n`;
+            const m = chegadaPrevista % 1440 % 60;
+            texto += \nPrevisão em ${proxima.name}: ${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}h\n;
         }
 
-        if (nota) texto += `\n*📝 Nota:* ${nota}`;
+        if (nota) texto += \n*📝 Nota:* ${nota};
 
-        document.getElementById('output').value = texto;
+        outputArea.value = texto;
         copyBtn.disabled = false;
     }
 
     document.getElementById('generate').addEventListener('click', gerarTexto);
     copyBtn.addEventListener('click', function(){
-        const txt = outputArea.value;
-        navigator.clipboard.writeText(txt).then(() => alert("Texto copiado!"));
+        navigator.clipboard.writeText(outputArea.value).then(() => alert("Texto copiado!"));
     });
 })();
 </script>
