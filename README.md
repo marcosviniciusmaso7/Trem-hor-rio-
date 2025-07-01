@@ -129,7 +129,7 @@
     function formatMinutes(mins) {
         const h = Math.floor(Math.abs(mins) / 60);
         const m = Math.abs(mins) % 60;
-        return ${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')};
+        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
     }
 
     function gerarTexto() {
@@ -152,14 +152,14 @@
             tipo = "🚉 PONTO DE PARADA DE";
         }
 
-        let texto = *🚊 Acompanhamento ${prefix}*\n\n*${tipo} ${nomeFormatado}*\n\nData: ${data}\n;
+        let texto = `*🚊 Acompanhamento ${prefix}*\n\n*${tipo} ${nomeFormatado}*\n\nData: ${data}\n`;
 
-        if (chegada) texto += Posicionado às: ${chegada}h\n;
-        if (!ehDestino && partida) texto += Partimos às: ${partida}h\n;
+        if (chegada) texto += `Posicionado às: ${chegada}h\n`;
+        if (!ehDestino && partida) texto += `Partimos às: ${partida}h\n`;
 
         if (!ehOrigem && !ehDestino && chegada && partida) {
             const permanencia = toMinutes(partida) - toMinutes(chegada);
-            texto += Tempo de Permanência: ${formatMinutes(permanencia)}h\n;
+            texto += `Tempo de Permanência: ${formatMinutes(permanencia)}h\n`;
         }
 
         let atraso = 0;
@@ -167,7 +167,7 @@
         if (partida && estacao.dep) atraso += toMinutes(partida) - toMinutes(estacao.dep);
         if (atraso < -720) atraso += 1440;
 
-        if (chegada || partida) texto += \nTempo de Atraso: ${formatMinutes(atraso)}h\n;
+        if (chegada || partida) texto += `\nTempo de Atraso: ${formatMinutes(atraso)}h\n`;
 
         if (!ehDestino && partida && estacao.dep) {
             const proxima = schedule[prefix][i + 1];
@@ -175,10 +175,10 @@
             const chegadaPrevista = toMinutes(partida) + (tempo < 0 ? tempo + 1440 : tempo);
             const h = Math.floor(chegadaPrevista % 1440 / 60);
             const m = chegadaPrevista % 1440 % 60;
-            texto += \nPrevisão em ${proxima.name}: ${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}h\n;
+            texto += `\nPrevisão em ${proxima.name}: ${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}h\n`;
         }
 
-        if (nota) texto += \n*📝 Nota:* ${nota};
+        if (nota) texto += `\n*📝 Nota:* ${nota}`;
 
         outputArea.value = texto;
         copyBtn.disabled = false;
